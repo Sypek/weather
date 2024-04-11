@@ -12,7 +12,7 @@ from bytewax.connectors.kafka import KafkaSinkMessage, KafkaSourceMessage, Kafka
 
 from src.agg import WeatherAggregator
 
-load_dotenv()
+load_dotenv(override=True)
 
 KAFKA_TOPIC_INPUT=os.getenv('KAFKA_TOPIC_INPUT')
 KAFKA_BOOTSTRAP_SERVER_INPUT=os.getenv('KAFKA_BOOTSTRAP_SERVER_INPUT')
@@ -47,6 +47,25 @@ def process_kafka_input(msg: KafkaSourceMessage) -> KafkaSinkMessage:
 def prepare_output(inputs):
     metadata, window_agg = inputs
     return (metadata, window_agg.get_data(as_dict=True))
+
+
+def prepare_output_to_kafka(inputs):
+    key, (metadata, values) = inputs
+
+    output_value = {
+        'metadata': {
+            'open_time': metadata.open_time.isoformat(),
+            'close_time': metadata.close_time.isoformat()
+        },
+        'weather': values
+    }
+
+    return KafkaSinkMessage(
+        key,
+        value=json.dumps(output_value),
+        topic=KAFKA_TOPIC_OUTPUT
+    )
+
 
 flow = Dataflow('WeatherProcessing')
 
@@ -90,25 +109,6 @@ window_fold = win.fold_window(
 
 output = op.map_value('PrepareOutput', window_fold, prepare_output)
 
-
-def prepare_output_to_kafka(inputs):
-    key, (metadata, values) = inputs
-    return KafkaSinkMessage(
-        key,
-        value=json.dumps(values),
-        topic=KAFKA_TOPIC_OUTPUT
-    )
-
-# kop.output(step_id='KafkaOutput', 
-#            up=output, 
-#            brokers=[KAFKA_BOOTSTRAP_SERVER_OUTPUT],
-#            topic=KAFKA_TOPIC_OUTPUT)
-
-# op.output('FinalOutput', output, KafkaSink(
-#     brokers=[KAFKA_BOOTSTRAP_SERVER_OUTPUT],
-#     topic=KAFKA_TOPIC_OUTPUT)
-# )
-
-# op.output('output', output, StdOutSink())
 kafka_ouput = op.map('PrepareKafkaOuput', output, prepare_output_to_kafka)
-kop.output('output', kafka_ouput, brokers=[KAFKA_BOOTSTRAP_SERVER_OUTPUT], topic=KAFKA_TOPIC_OUTPUT)
+
+kop.output('KafkaOutput', kafka_ouput, brokers=[KAFKA_BOOTSTRAP_SERVER_OUTPUT], topic=KAFKA_TOPIC_OUTPUT)

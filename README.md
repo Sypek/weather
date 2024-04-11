@@ -28,11 +28,15 @@ brew install kcat
 
 
 ### Useful commands
-List kafpa topics
+List Kafka topics:
 ```
 docker exec -it kafka-broker kafka-topics.sh --bootstrap-server localhost:9092 --list
 ```
 
+Delete Kafka topic:
+```
+docker exec -it kafka-broker kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic <TOPIC_NAME>
+```
 
 
 ### Useful resources:

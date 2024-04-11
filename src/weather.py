@@ -2,9 +2,8 @@ import os
 from dotenv import load_dotenv
 import requests
 from utils.types import Weather
-import random
 
-load_dotenv()
+load_dotenv(override=True)
 API_KEY = os.getenv('API_KEY')
 API_WEATHER_URL = os.getenv('API_WEATHER_URL')
 
@@ -32,17 +31,3 @@ def get_current_weather_data(lat: int, lon: int):
         return format_response(response.json())
     except requests.exceptions.RequestException as e:
         print(e)
-
-
-def get_current_weather_data_MOCKED(lat: int, lon: int):
-    mocked_response = {
-        'main': {
-            'temp': random.random() * 10,
-            'pressure': random.random() * 1000,
-            'humidity': random.random()
-        },
-        'wind': {
-            'speed': random.random() * 15
-        }
-    }
-    return format_response(mocked_response)
