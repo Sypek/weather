@@ -12,23 +12,55 @@ services:
       - ALLOW_ANONYMOUS_LOGIN=yes
       
   kafka:
-    container_name: kafka-broker
+    container_name: kafka
     restart: always
     image: docker.io/bitnami/kafka:3.3
     ports:
-      - "9093:9093"
+      - "9092:9092"
     volumes:
       - "kafka-volume:/bitnami"
     environment:
       - KAFKA_BROKER_ID=1
       - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
       - ALLOW_PLAINTEXT_LISTENER=yes
-      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
-      - KAFKA_CFG_LISTENERS=CLIENT://:9092,EXTERNAL://:9093
-      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:9092,EXTERNAL://localhost:9093
-      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=CLIENT
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=LISTENER_INTERNAL:PLAINTEXT,LISTENER_EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=LISTENER_INTERNAL
+      - KAFKA_CFG_LISTENERS=LISTENER_INTERNAL://kafka:29092,LISTENER_EXTERNAL://kafka:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=LISTENER_INTERNAL://kafka:29092,LISTENER_EXTERNAL://localhost:9092
     depends_on:
       - zookeeper
+
+  front:
+    container_name: front
+    build:
+      dockerfile: src/front/Dockerfile
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    depends_on:
+      - kafka
+      - stream_processing
+
+  producer:
+    container_name: producer
+    build:
+      dockerfile: src/producer/Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      - kafka
+
+  stream_processing:
+    container_name: stream_processing
+    build:
+      dockerfile: src/stream_processing/Dockerfile
+    env_file:
+      - .env
+    depends_on:
+      - kafka
+      - producer
+
 
 volumes:
   kafka-volume:

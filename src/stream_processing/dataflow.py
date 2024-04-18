@@ -6,9 +6,8 @@ import json
 from bytewax.dataflow import Dataflow
 import bytewax.operators as op
 import bytewax.operators.window as win
-from bytewax.connectors.stdio import StdOutSink
 from bytewax.connectors.kafka import operators as kop
-from bytewax.connectors.kafka import KafkaSinkMessage, KafkaSourceMessage, KafkaSink
+from bytewax.connectors.kafka import KafkaSinkMessage, KafkaSourceMessage
 
 from src.agg import WeatherAggregator
 
@@ -23,11 +22,13 @@ KAFKA_BOOTSTRAP_SERVER_OUTPUT=os.getenv('KAFKA_BOOTSTRAP_SERVER_OUTPUT')
 WINDOW_ALIGN_TO = datetime.now(timezone.utc)
 WINDOW_LENGTH = timedelta(seconds=60)
 
-print(' --- CONFIG ---')
+print(' --- Kafka config ---')
 print(f'KAFKA_TOPIC_INPUT: {KAFKA_TOPIC_INPUT}')
 print(f'KAFKA_TOPIC_OUTPUT: {KAFKA_TOPIC_OUTPUT}')
 print(f'KAFKA_BOOTSTRAP_SERVER_INPUT: {KAFKA_BOOTSTRAP_SERVER_INPUT}')
 print(f'KAFKA_BOOTSTRAP_SERVER_OUTPUT: {KAFKA_BOOTSTRAP_SERVER_OUTPUT}')
+print(f'WINDOW_ALIGN_TO: {WINDOW_ALIGN_TO}')
+print(f'WINDOW_LENGTH: {WINDOW_LENGTH}')
 
 def process_kafka_input(msg: KafkaSourceMessage) -> KafkaSinkMessage:
     key = json.loads(msg.key)['key']
@@ -110,5 +111,7 @@ window_fold = win.fold_window(
 output = op.map_value('PrepareOutput', window_fold, prepare_output)
 
 kafka_ouput = op.map('PrepareKafkaOuput', output, prepare_output_to_kafka)
+
+op.inspect('Output', kafka_ouput)
 
 kop.output('KafkaOutput', kafka_ouput, brokers=[KAFKA_BOOTSTRAP_SERVER_OUTPUT], topic=KAFKA_TOPIC_OUTPUT)

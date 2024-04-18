@@ -1,6 +1,5 @@
 import os
 import json
-import random
 from dataclasses import asdict
 from dotenv import load_dotenv
 from kafka import KafkaProducer
@@ -30,7 +29,8 @@ city = CityLocation(
 producer = KafkaProducer(
     bootstrap_servers=[KAFKA_BOOTSTRAP_SERVER_INPUT],
     key_serializer=lambda v: json.dumps(v).encode('utf-8'),
-    value_serializer=lambda v: json.dumps(v).encode('utf-8')
+    value_serializer=lambda v: json.dumps(v).encode('utf-8'),
+    api_version=(2, 0, 2)  # version of kafka-python package
 )
 
 print(f'Producer sending to kafka topic: {KAFKA_TOPIC_INPUT} on server: {KAFKA_BOOTSTRAP_SERVER_INPUT}')
