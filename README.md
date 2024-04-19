@@ -15,6 +15,8 @@ In the end, all that was produced, got to be consumed. Kafka Consumer get the pr
 
 To combine all the services together, I used docker compose.
 
+![ArchitectureDiagram](docs/imgs/WeatherDiagram.png)
+
 
 ### Misc:
 
